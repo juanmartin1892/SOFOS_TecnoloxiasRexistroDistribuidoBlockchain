@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # Servicio de base de datos MongoDB
+  mongo:
+    image: mongo:latest
+    container_name: mongo_container
+    ports:
+      - "27017:27017"
+    networks:
+      - app_network
+    
+  # Servicio de backend Oraculo
+  oraculo:
+    image: node:latest
+    container_name: node_container
+    ports:
+      - "3001:3001"
+    working_dir: /app
+    env_file:
+      - ./oraculo/.env
+    volumes:
+      - ./oraculo:/app
+    networks:
+      - app_network
+    command: sh -c "npm install && npm start"
+
+  # Servicio de ejemplo para auditar
+  service:
+    image: node:latest
+    container_name: node_service_container
+    ports:
+      - "4000:4000"
+    working_dir: /app
+    volumes:
+      - ./oraculo:/app
+    networks:
+      - app_network
+    command: sh -c "npm install && npm run startService"
+  
+  # Servicio de frontend
+  frontend:
+    image: node:latest
+    container_name: node_frontend_container
+    ports:
+      - "3000:3000"
+    working_dir: /app
+    volumes:
+      - ./front:/app
+    networks:
+      - app_network
+    command: sh -c "npm install && npm run start"
+  
+  # Servicio de nodo IPFS
+  ipfs:
+    image: ipfs/kubo:latest
+    container_name: ipfs_container
+    ports:
+      - "4001:4001"
+      - "4001:4001/udp"
+      - "8080:8080"  # HTTP Gateway (para el navegador)
+      - "5001:5001"  # API de control
+    networks:
+      - app_network
+    command: daemon 
+    volumes:
+      - ipfs_data:/data/ipfs
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  ipfs_data:
+    driver: local

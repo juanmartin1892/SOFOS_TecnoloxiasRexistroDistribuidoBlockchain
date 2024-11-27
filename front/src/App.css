@@ -1,0 +1,72 @@
+.App-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px; /* Espaciado entre elementos */
+  padding: 20px;
+  text-align: center;
+  background-color: #f9f9f9;
+  width: 100%;
+  min-height: 100vh; /* Asegura que el header ocupe toda la altura de la pantalla */
+}
+
+.App-logo {
+  width: 150px;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 2.5em;
+  color: #333;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  width: 90%;
+  max-width: 600px;
+}
+
+.form-section {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  font-size: 1.8em;
+  margin-bottom: 15px;
+  color: #555;
+}
+
+.input-field,
+.file-input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+.button {
+  width: 100%;
+  padding: 12px;
+  font-size: 1.2em;
+  color: #fff;
+  background-color: #4CAF50;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.button:hover {
+  background-color: #45a049;
+}
