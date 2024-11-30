@@ -378,8 +378,8 @@ await saveAudits(audits);
 
 // Download the scripts to be executed from IPFS
 const scripts = [
-	'Qma66qikLJs53qg56jfkjriVrN8aXghj8VzA2YTmmSapXs',
-	'QmXypLQL7eGbQQrD1Zry7MSUNYjWguvuvub3VxMWCZ4Vip'
+	'QmdTf2NewqnEknhdKyTfvtHJ6ejLRUe7X8KJww4tHQZmmW',
+	'Qmaxwis2N7jUpFCADL317geV6YKe7dAYYwMgmeDX1S4eLp'
 ]
 
 const scriptsJsons = []
@@ -390,27 +390,30 @@ for (let i = 0; i < scripts.length; i++) {
 
 // Execute the scripts
 for (let i = 0; i < scriptsJsons.length; i++) {
-	executePythonScript(scriptsJsons[i].path, scriptsJsons[i].hash, "service", "4000");
+	var reponse = await executePythonScript(scriptsJsons[i].path, scriptsJsons[i].hash, "service", "4000");
+	console.log("reponse ", reponse);
 }
 
-// // Audit machines every 30 seconds 
-// setInterval(async () => {
-// 	console.log('Auditing machines...');
-//     // Read all audits from the database
-//     const audits = await Audit.find().exec();
+// Audit machines every 30 seconds 
+setInterval(async () => {
+	console.log('Auditing machines...');
+    // Read all audits from the database
+    const audits = await Audit.find().exec();
 
-//     // Audit all machines
-//     for (let i = 0; i < audits.length; i++) {
-//         const report = await auditMachine(audits[i]);
-//         console.log(report);
+    // Audit all machines
+    for (let i = 0; i < audits.length; i++) {
+		// Execute the script for each audit
+		var reponse = await executePythonScript(scriptsJsons[i].path, scriptsJsons[i].hash, audits.host, audits.port);
 
-//         const hash = await sendReportToIpfs(report);
-//         console.log(`Report saved to IPFS with hash: ${hash}`);
+        console.log(reponse);
 
-//         // Enviar evidencia al contrato
-//         await sendEvidenceToBlockchain(audits[i].id, hash);
-//     }
-// }, 30000);
+        const hash = await sendReportToIpfs(reponse);
+        console.log(`Report saved to IPFS with hash: ${hash}`);
+
+        // Enviar evidencia al contrato
+        await sendEvidenceToBlockchain(audits[i].id, hash);
+    }
+}, 30000);
 
 // Listen for events from the blockchain
 console.log('Listening for event AuditoriaCreada...');
@@ -561,19 +564,24 @@ async function executePythonScript(scriptUrl, hash, ...params) {
 			return;
 		}
 
-        // Ejecutar el script directamente con Python
-        const pythonProcess = spawn('python3', ['-c', scriptContent, ...params]);
+        return new Promise((resolve, reject) => {
+            // Ejecutar el script directamente con Python
+            const pythonProcess = spawn('python3', ['-c', scriptContent, ...params]);
 
-        pythonProcess.stdout.on('data', (data) => {
-            console.log(`Output: ${data.toString()}`);
-        });
+            let output = '';
 
-        pythonProcess.stderr.on('data', (data) => {
-            console.error(`Error: ${data.toString()}`);
-        });
+            pythonProcess.stdout.on('data', (data) => {
+                output += data.toString();
+            });
 
-        pythonProcess.on('close', (code) => {
-            console.log(`Process exited with code: ${code}`);
+            pythonProcess.stderr.on('data', (data) => {
+                console.error(`Error: ${data.toString()}`);
+            });
+
+            pythonProcess.on('close', (code) => {
+                console.log(`Process exited with code: ${code}`);
+                resolve(output);
+            });
         });
     } catch (err) {
         console.error(`Failed to execute script: ${err.message}`);

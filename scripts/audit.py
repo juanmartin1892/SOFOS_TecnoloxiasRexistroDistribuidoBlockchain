@@ -1,6 +1,8 @@
 import asyncio
 import time
 import argparse
+import random
+import uuid
 
 async def audit_host(audit):
     """
@@ -48,8 +50,10 @@ async def main():
     parser.add_argument("port", type=int, help="The port to audit (e.g., 80).")
     args = parser.parse_args()
 
+    unique_id = uuid.uuid4()
+    
     # Create audit object
-    audit = {"id": 1, "host": args.host, "port": args.port}
+    audit = {"id": unique_id, "host": args.host, "port": args.port}
     
     # Perform audit
     report = await audit_host(audit)
