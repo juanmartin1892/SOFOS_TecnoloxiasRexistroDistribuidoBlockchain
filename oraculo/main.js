@@ -375,6 +375,18 @@ const audits = await getAllAudits();
 // TODO: Get the audits from the database and compare them with the audits from the blockchain, and only save the new audits
 await saveAudits(audits);
 
+// Listen for events from the blockchain
+console.log('Listening for event AuditoriaCreada...');
+contract.on("AuditoriaCreada", (id, serviceName, owner, uri, port, valid, timestamp) => {
+    console.log('New audit created:', id, serviceName, owner, uri, port, valid, timestamp);
+	const audit = new Audit({
+		id: id.toNumber(),
+		host: uri,
+		port: port
+	});
+	audit.save();
+});
+
 
 // Download the scripts to be executed from IPFS
 const scripts = [
@@ -403,29 +415,20 @@ setInterval(async () => {
     // Audit all machines
     for (let i = 0; i < audits.length; i++) {
 		// Execute the script for each audit
-		var reponse = await executePythonScript(scriptsJsons[i].path, scriptsJsons[i].hash, audits.host, audits.port);
+		for (let j = 0; j < scriptsJsons.length; j++) {
+			var reponse = await executePythonScript(scriptsJsons[j].path, scriptsJsons[j].hash, audits[i].host, audits[i].port);
 
-        console.log(reponse);
+			console.log("reponse" + reponse);
 
-        const hash = await sendReportToIpfs(reponse);
-        console.log(`Report saved to IPFS with hash: ${hash}`);
+			const hash = await sendReportToIpfs(reponse);
+			console.log(`Report saved to IPFS with hash: ${hash}`);
 
-        // Enviar evidencia al contrato
-        await sendEvidenceToBlockchain(audits[i].id, hash);
+			 // Enviar evidencia al contrato
+			 await sendEvidenceToBlockchain(audits[i].id, hash);
+		}
     }
 }, 30000);
 
-// Listen for events from the blockchain
-console.log('Listening for event AuditoriaCreada...');
-contract.on("AuditoriaCreada", (id, serviceName, owner, uri, port, valid, timestamp) => {
-    console.log('New audit created:', id, serviceName, owner, uri, port, valid, timestamp);
-	const audit = new Audit({
-		id: id.toNumber(),
-		host: uri,
-		port: port
-	});
-	audit.save();
-});
 
 // Save audits to the database
 async function saveAudits(audits) {
@@ -509,8 +512,8 @@ async function auditMachine (audit) {
 
 // Send report to IPFS 
 async function sendReportToIpfs (report) {
-	console.log('Sending report to IPFS...');
-    const result = await ipfsClient.add(JSON.stringify(report));
+	console.log('Sending report '+ report +' to IPFS...');
+    const result = await ipfsClient.add(report);
     await ipfsClient.files.cp(`/ipfs/${result.cid}`, `/${result.cid}`)
     return result.cid.toString();
 }
@@ -551,7 +554,6 @@ async function sendEvidenceToBlockchain(auditId, evidence) {
         console.error('Error adding evidence:', err);
     }
 }
-
 
 // Función para ejecutar el script Python directamente
 async function executePythonScript(scriptUrl, hash, ...params) {

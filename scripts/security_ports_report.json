@@ -1,0 +1,66 @@
+{
+    "host": "localhost",
+    "timestamp": "2024-11-30 11:13:37",
+    "results": [
+        {
+            "port": 22,
+            "status": "closed",
+            "latency": null
+        },
+        {
+            "port": 80,
+            "status": "closed",
+            "latency": null
+        },
+        {
+            "port": 443,
+            "status": "closed",
+            "latency": null
+        },
+        {
+            "port": 3389,
+            "status": "closed",
+            "latency": null
+        },
+        {
+            "port": 21,
+            "status": "closed",
+            "latency": null
+        },
+        {
+            "port": 25,
+            "status": "closed",
+            "latency": null
+        },
+        {
+            "port": 110,
+            "status": "closed",
+            "latency": null
+        },
+        {
+            "port": 143,
+            "status": "closed",
+            "latency": null
+        },
+        {
+            "port": 3306,
+            "status": "closed",
+            "latency": null
+        },
+        {
+            "port": 5432,
+            "status": "closed",
+            "latency": null
+        },
+        {
+            "port": 6379,
+            "status": "closed",
+            "latency": null
+        },
+        {
+            "port": 4000,
+            "status": "open",
+            "latency": 0.06
+        }
+    ]
+}
