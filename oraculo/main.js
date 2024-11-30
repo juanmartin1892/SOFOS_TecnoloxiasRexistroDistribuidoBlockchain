@@ -1,7 +1,12 @@
 import mongoose from 'mongoose';
 import net from 'net';
+import crypto from 'crypto';
+import https from 'https';
+
 import { create } from 'kubo-rpc-client'
 import { ethers } from 'ethers';
+import { spawn } from 'child_process';
+import { log } from 'console';
 
 // Contract address and ABI
 const addresse = "0x686D834A4dD03d277C8Fd91EE6d737d1bf09bfD4"
@@ -370,24 +375,41 @@ const audits = await getAllAudits();
 // TODO: Get the audits from the database and compare them with the audits from the blockchain, and only save the new audits
 await saveAudits(audits);
 
-// Audit machines every 30 seconds 
-setInterval(async () => {
-	console.log('Auditing machines...');
-    // Read all audits from the database
-    const audits = await Audit.find().exec();
 
-    // Audit all machines
-    for (let i = 0; i < audits.length; i++) {
-        const report = await auditMachine(audits[i]);
-        console.log(report);
+// Download the scripts to be executed from IPFS
+const scripts = [
+	'Qma66qikLJs53qg56jfkjriVrN8aXghj8VzA2YTmmSapXs',
+	'Qma66qikLJs53qg56jfkjriVrN8aXghj8VzA2YTmmSapXs'
+]
 
-        const hash = await sendReportToIpfs(report);
-        console.log(`Report saved to IPFS with hash: ${hash}`);
+const scriptsJsons = []
+for (let i = 0; i < scripts.length; i++) {
+	const scriptJson = await downloadScriptFromIpfs(scripts[i]);
+	scriptsJsons.push(scriptJson);
+}
 
-        // Enviar evidencia al contrato
-        await sendEvidenceToBlockchain(audits[i].id, hash);
-    }
-}, 30000);
+let scriptJson = await downloadScriptFromIpfs('Qma66qikLJs53qg56jfkjriVrN8aXghj8VzA2YTmmSapXs');
+
+executePythonScript(scriptJson.path, scriptJson.hash);
+
+// // Audit machines every 30 seconds 
+// setInterval(async () => {
+// 	console.log('Auditing machines...');
+//     // Read all audits from the database
+//     const audits = await Audit.find().exec();
+
+//     // Audit all machines
+//     for (let i = 0; i < audits.length; i++) {
+//         const report = await auditMachine(audits[i]);
+//         console.log(report);
+
+//         const hash = await sendReportToIpfs(report);
+//         console.log(`Report saved to IPFS with hash: ${hash}`);
+
+//         // Enviar evidencia al contrato
+//         await sendEvidenceToBlockchain(audits[i].id, hash);
+//     }
+// }, 30000);
 
 // Listen for events from the blockchain
 console.log('Listening for event AuditoriaCreada...');
@@ -489,6 +511,30 @@ async function sendReportToIpfs (report) {
     return result.cid.toString();
 }
 
+// Download an script from IPFS
+async function downloadScriptFromIpfs (CID) {
+	console.log('Downloading script from IPFS...');
+	
+	const stream = ipfsClient.cat(CID);
+    const chunks = [];
+
+	for await (const chunk of stream) {
+		chunks.push(chunk);
+	}
+
+	// Combine all chunks into a buffer
+	const buffer = Buffer.concat(chunks);
+
+	// Convert buffer into a string
+	const jsonString = buffer.toString('utf-8');
+
+	// Parse JSON content into a variable
+	const jsonData = JSON.parse(jsonString);
+	console.log('Fetched JSON data:', jsonData);
+
+	return jsonData;
+}
+
 // Send evidence to blockchain
 async function sendEvidenceToBlockchain(auditId, evidence) {
 	console.log('Sending evidence to blockchain...');
@@ -500,4 +546,51 @@ async function sendEvidenceToBlockchain(auditId, evidence) {
     } catch (err) {
         console.error('Error adding evidence:', err);
     }
+}
+
+
+// Función para ejecutar el script Python directamente
+async function executePythonScript(scriptUrl, hash) {
+    try {
+        const scriptContent = await downloadPythonScript(scriptUrl);
+
+		// Check if the hash is correct
+		if (crypto.createHash('sha512').update(scriptContent).digest('hex') !== hash) {
+			console.error('Hashes do not match');
+			return;
+		}
+
+        // Ejecutar el script directamente con Python
+        const pythonProcess = spawn('python3', ['-c', scriptContent]);
+
+        pythonProcess.stdout.on('data', (data) => {
+            console.log(`Output: ${data.toString()}`);
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            console.error(`Error: ${data.toString()}`);
+        });
+
+        pythonProcess.on('close', (code) => {
+            console.log(`Process exited with code: ${code}`);
+        });
+    } catch (err) {
+        console.error(`Failed to execute script: ${err.message}`);
+    }
+}
+
+// Función para descargar el script desde GitHub
+function downloadPythonScript(url) {
+    return new Promise((resolve, reject) => {
+        https.get(url, (response) => {
+            if (response.statusCode !== 200) {
+                return reject(new Error(`Failed to get file: ${response.statusCode}`));
+            }
+            let data = '';
+            response.on('data', chunk => {
+                data += chunk;
+            });
+            response.on('end', () => resolve(data));
+        }).on('error', err => reject(err));
+    });
 }
