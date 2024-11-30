@@ -9,7 +9,7 @@ import { spawn } from 'child_process';
 import { log } from 'console';
 
 // Contract address and ABI
-const addresse = "0x686D834A4dD03d277C8Fd91EE6d737d1bf09bfD4"
+const addresse = "0x73C26663463428019276EAe293Fa816E5e205321"
 const abi = [
 	{
 		"inputs": [],
@@ -371,6 +371,8 @@ const ipfsClient = create({
 // Get all audits from the blockchain
 const audits = await getAllAudits();
 
+console.log('Audits:', audits);
+
 // Save audits to the database
 // TODO: Get the audits from the database and compare them with the audits from the blockchain, and only save the new audits
 await saveAudits(audits);
@@ -391,19 +393,13 @@ contract.on("AuditoriaCreada", (id, serviceName, owner, uri, port, valid, timest
 // Download the scripts to be executed from IPFS
 const scripts = [
 	'QmdTf2NewqnEknhdKyTfvtHJ6ejLRUe7X8KJww4tHQZmmW',
-	'Qmaxwis2N7jUpFCADL317geV6YKe7dAYYwMgmeDX1S4eLp'
+	'QmNUditnihErzXjTegtvdix3xWPmzL6HaHHz57CD4og7bg'
 ]
 
 const scriptsJsons = []
 for (let i = 0; i < scripts.length; i++) {
 	const scriptJson = await downloadScriptFromIpfs(scripts[i]);
 	scriptsJsons.push(scriptJson);
-}
-
-// Execute the scripts
-for (let i = 0; i < scriptsJsons.length; i++) {
-	var reponse = await executePythonScript(scriptsJsons[i].path, scriptsJsons[i].hash, "service", "4000");
-	console.log("reponse ", reponse);
 }
 
 // Audit machines every 30 seconds 
@@ -473,41 +469,6 @@ async function getAuditById(auditId) {
 			console.error('Error getting audit:', err);
 		}
 	});
-}
-
-//Audit a machine
-async function auditMachine (audit) {
-	console.log(`Auditing ${audit.host}:${audit.port}`);
-    return new Promise((resolve, reject) => {
-        let report = {
-            id: audit.id,
-            host: audit.host,
-            port: audit.port,
-            timestamp: Date.now(),
-            latency: 0,
-            connected: false
-        };
-    
-        const start = Date.now();
-        
-        console.log(`Auditing ${audit.host}:${audit.port}`);
-    
-        const client = net.createConnection({host: audit.host, port: audit.port}, () => {
-            const delay = Date.now() - start;
-            report.latency = delay;
-            report.connected = true;
-            client.end();
-        });
-
-        client.on('end', () => {
-            resolve(report);
-        });
-
-        client.on('error', (err) => {
-            report.connected = false;
-            resolve(report);
-        });
-    });
 }
 
 // Send report to IPFS 

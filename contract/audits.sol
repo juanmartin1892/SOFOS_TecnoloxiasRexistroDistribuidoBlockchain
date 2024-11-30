@@ -52,6 +52,8 @@ contract auditoriasContract {
    
     // Funcion para añadir una evidencia
     function anadirEvidencia(uint _id, string memory _evidencia) public {
+        // Check if is the oracle 
+        require(msg.sender == operator, "Only the oracle can add evidence");
         evidencias[_id].push(Evidencia(_evidencia, block.timestamp));
         emit EvidenciaAnadida(_id, _evidencia, block.timestamp);
     }

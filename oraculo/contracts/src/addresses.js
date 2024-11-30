@@ -1,5 +1,5 @@
 const addresses = {
-    audits: "0x686D834A4dD03d277C8Fd91EE6d737d1bf09bfD4",
+    audits: "0x73C26663463428019276EAe293Fa816E5e205321",
 };
 
 export default addresses;
