@@ -22,7 +22,6 @@ async def audit_host(audit):
     }
 
     start = time.time()
-    print(f"Auditing {audit['host']}:{audit['port']}")
 
     try:
         # Open a connection to the host and port
@@ -54,7 +53,7 @@ async def main():
     
     # Perform audit
     report = await audit_host(audit)
-    print("Audit report:", report)
+    print(report)
 
 if __name__ == "__main__":
     asyncio.run(main())

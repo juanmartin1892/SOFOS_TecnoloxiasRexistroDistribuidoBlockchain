@@ -379,7 +379,7 @@ await saveAudits(audits);
 // Download the scripts to be executed from IPFS
 const scripts = [
 	'Qma66qikLJs53qg56jfkjriVrN8aXghj8VzA2YTmmSapXs',
-	'Qma66qikLJs53qg56jfkjriVrN8aXghj8VzA2YTmmSapXs'
+	'QmXypLQL7eGbQQrD1Zry7MSUNYjWguvuvub3VxMWCZ4Vip'
 ]
 
 const scriptsJsons = []
@@ -388,9 +388,10 @@ for (let i = 0; i < scripts.length; i++) {
 	scriptsJsons.push(scriptJson);
 }
 
-let scriptJson = await downloadScriptFromIpfs('Qma66qikLJs53qg56jfkjriVrN8aXghj8VzA2YTmmSapXs');
-
-executePythonScript(scriptJson.path, scriptJson.hash);
+// Execute the scripts
+for (let i = 0; i < scriptsJsons.length; i++) {
+	executePythonScript(scriptsJsons[i].path, scriptsJsons[i].hash, "service", "4000");
+}
 
 // // Audit machines every 30 seconds 
 // setInterval(async () => {
@@ -550,7 +551,7 @@ async function sendEvidenceToBlockchain(auditId, evidence) {
 
 
 // Función para ejecutar el script Python directamente
-async function executePythonScript(scriptUrl, hash) {
+async function executePythonScript(scriptUrl, hash, ...params) {
     try {
         const scriptContent = await downloadPythonScript(scriptUrl);
 
@@ -561,7 +562,7 @@ async function executePythonScript(scriptUrl, hash) {
 		}
 
         // Ejecutar el script directamente con Python
-        const pythonProcess = spawn('python3', ['-c', scriptContent]);
+        const pythonProcess = spawn('python3', ['-c', scriptContent, ...params]);
 
         pythonProcess.stdout.on('data', (data) => {
             console.log(`Output: ${data.toString()}`);
